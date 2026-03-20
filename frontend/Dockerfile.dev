@@ -1,0 +1,10 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Install dependencies first (cached layer)
+COPY package.json package-lock.json* ./
+RUN npm install
+
+# Source is mounted as volume in development — no COPY needed
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5174"]

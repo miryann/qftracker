@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  backend-lint-test:
+    name: Backend — Lint & Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt black isort flake8
+
+      - name: Check formatting (black)
+        run: black --check .
+
+      - name: Check import order (isort)
+        run: isort --check-only --profile black .
+
+      - name: Lint (flake8)
+        run: flake8 . --max-line-length=100 --extend-ignore=E203,W503
+
+      - name: Run tests
+        run: |
+          if [ -d "tests" ]; then
+            pip install pytest
+            pytest tests/ -v
+          else
+            echo "No tests directory found — skipping"
+          fi
+        env:
+          FIRESTORE_EMULATOR_HOST: localhost:8080
+          FIRESTORE_PROJECT_ID: qantas-tracker-test
+
+  frontend-lint-build:
+    name: Frontend — Lint & Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build (validates TypeScript)
+        run: npm run build
+        env:
+          VITE_MAPBOX_TOKEN: ${{ secrets.VITE_MAPBOX_TOKEN || 'pk.placeholder' }}
+          VITE_API_URL: http://localhost:8000
