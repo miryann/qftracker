@@ -1,0 +1,46 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "aircraft_live_positions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "timestamp", "order": "DESCENDING" },
+        { "fieldPath": "aircraft_type", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "aircraft_live_positions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "timestamp", "order": "ASCENDING" },
+        { "fieldPath": "on_ground", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "scheduled_flights",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "flight_date", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "origin_iata", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "maintenance_history",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "aircraft_registration", "order": "ASCENDING" },
+        { "fieldPath": "end_date", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "incidents",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "aircraft_registration", "order": "ASCENDING" },
+        { "fieldPath": "incident_date", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

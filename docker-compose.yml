@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  firebase-emulator:
+    image: node:18-alpine
+    working_dir: /app
+    volumes:
+      - ./firebase.json:/app/firebase.json:ro
+      - ./firestore:/app/firestore:ro
+      - firebase_data:/app/.firebase
+    ports:
+      - "4000:4000"   # Emulator UI
+      - "8080:8080"   # Firestore
+    environment:
+      FIREBASE_PROJECT_ID: qantas-tracker-dev
+    command: >
+      sh -c "
+        npm install -g firebase-tools --quiet &&
+        firebase emulators:start
+          --project qantas-tracker-dev
+          --only firestore
+          --import /app/.firebase/export
+          --export-on-exit /app/.firebase/export
+      "
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:4000"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  backend-api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    environment:
+      FIRESTORE_EMULATOR_HOST: firebase-emulator:8080
+      FIRESTORE_PROJECT_ID: qantas-tracker-dev
+      OPENSKY_USERNAME: ${OPENSKY_USERNAME:-}
+      OPENSKY_PASSWORD: ${OPENSKY_PASSWORD:-}
+      LOG_LEVEL: ${LOG_LEVEL:-DEBUG}
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+    depends_on:
+      firebase-emulator:
+        condition: service_healthy
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    restart: on-failure
+
+  frontend-dev:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "5174:5174"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      VITE_API_URL: http://localhost:8000
+      VITE_MAPBOX_TOKEN: ${VITE_MAPBOX_TOKEN:-}
+      CHOKIDAR_USEPOLLING: "true"
+    command: npm run dev -- --host 0.0.0.0 --port 5174
+    depends_on:
+      - backend-api
+
+volumes:
+  firebase_data:
